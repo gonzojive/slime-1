@@ -2,7 +2,7 @@
 ;;
 ;; Author: Luke Gorrie  <luke@synap.se>
 ;;         Edi Weitz  <edi@agharta.de>
-;;         Matthias Koeppe  <mkoeppe@mail.math.uni-magdeburg.de> 
+;;         Matthias Koeppe  <mkoeppe@mail.math.uni-magdeburg.de>
 ;;         Tobias C. Rittweiler <tcr@freebits.de>
 ;;         and others
 ;;
@@ -16,7 +16,7 @@
   (swank-require :swank-util))
 
 (defslimefun completions (string default-package-name)
-  "Return a list of completions for a symbol designator STRING.  
+  "Return a list of completions for a symbol designator STRING.
 
 The result is the list (COMPLETION-SET COMPLETED-PREFIX), where
 COMPLETION-SET is the list of all matching completions, and
@@ -26,8 +26,8 @@ string.
 Simple compound matching is supported on a per-hyphen basis:
 
   (completions \"m-v-\" \"COMMON-LISP\")
-    ==> ((\"multiple-value-bind\" \"multiple-value-call\" 
-          \"multiple-value-list\" \"multiple-value-prog1\" 
+    ==> ((\"multiple-value-bind\" \"multiple-value-call\"
+          \"multiple-value-list\" \"multiple-value-prog1\"
           \"multiple-value-setq\" \"multiple-values-limit\")
          \"multiple-value\")
 
@@ -46,37 +46,118 @@ format. The cases are as follows:
 "
   (multiple-value-bind (name package-name package internal-p)
       (parse-completion-arguments string default-package-name)
-    (let* ((symbol-set  (symbol-completion-set 
-			 name package-name package internal-p
-			 (make-compound-prefix-matcher #\-)))
-	   (package-set (package-completion-set 
-			 name package-name package internal-p
-			 (make-compound-prefix-matcher '(#\. #\-))))
-	   (completion-set
-	    (format-completion-set (nconc symbol-set package-set) 
-				   internal-p package-name)))
+    (let* ((symbol-set  (symbol-completion-set
+                         name package-name package internal-p
+                         (default-compound-prefix-matcher :symbol)))
+           (package-set (package-completion-set
+                         name package-name package internal-p
+                         (default-compound-prefix-matcher :package)))
+           (combined-set (combined-completion-set
+                          name package-name package internal-p
+                          (default-compound-prefix-matcher :package)
+                          (default-compound-prefix-matcher :symbol)))
+           (completion-set
+            (if (not combined-set)
+                (format-completion-set (nconc symbol-set package-set)
+                                       internal-p package-name)
+                (sort combined-set #'string<))))
       (when completion-set
-	(list completion-set (longest-compound-prefix completion-set))))))
+        (list completion-set (longest-compound-prefix completion-set))))))
 
+(defun default-compound-prefix-matcher (prefix-type)
+  "Returns the compound prefix matcher for the given type of prefix.
+
+PREFIX-TYPE is one of :package, :symbol.
+
+Returns a matching function that takes a `prefix' and a
+`target' string and which returns T if `prefix' is a
+compound-prefix of `target', and otherwise NIL."
+  (check-type prefix-type (member :package :symbol))
+  (ecase prefix-type
+    (:package (make-compound-prefix-matcher '(#\. #\- #\/)))
+    (:symbol (make-compound-prefix-matcher #\-))))
 
 ;;;;; Find completion set
 
 (defun symbol-completion-set (name package-name package internal-p matchp)
   "Return the set of completion-candidates as strings."
-  (mapcar (completion-output-symbol-converter name)
-	  (and package
-	       (mapcar #'symbol-name
-		       (find-matching-symbols name
-					      package
-					      (and (not internal-p)
-						   package-name)
-					      matchp)))))
+  (format t "(symbol-completion-set ~S ~S ~S ~S x)~%"
+          name package-name package internal-p)
+  (when package
+    (mapcar
+     (completion-output-symbol-converter name)
+     (mapcar #'symbol-name
+             (find-matching-symbols name
+                                    package
+                                    (and (not internal-p)
+                                         package-name)
+                                    matchp)))))
+
+(defun combined-completion-set (name package-name package internal-p
+                                package-matchp symbol-matchp)
+  "Return the set of completion-candidates as strings.
+
+This function handles the case when PACKAGE-NAME is incomplete (i.e. package is
+null) and NAME may or may not be incomplete.
+
+The strings returned include the package prefix and symbol."
+  (when (and name package-name (not package))
+    (let* ((completed-package-prefixes
+            (let ((single-colon-prefixes ;; example: ("cl-user:" "cl:")
+                   (package-completion-set package-name
+                                           nil
+                                           package
+                                           internal-p
+                                           package-matchp)))
+              (if (not internal-p)
+                  single-colon-prefixes
+                  (mapcar (lambda (package-prefix)
+                            (concatenate 'string package-prefix ":"))
+                          single-colon-prefixes))))
+           (completed-package-names
+            (mapcar 'strip-package-delimeter completed-package-prefixes))
+           (completed-packages
+            (mapcar 'guess-package completed-package-names))
+           (completions-for-each-package-completion
+            (mapcar (lambda (prefix completed-package-name completed-package)
+                      (when completed-package
+                        (mapcar
+                         (lambda (completed-sym)
+                           (concatenate 'string prefix completed-sym))
+                         (symbol-completion-set name
+                                                completed-package-name
+                                                completed-package
+                                                internal-p
+                                                symbol-matchp))))
+                    completed-package-prefixes
+                    completed-package-names
+                    completed-packages)))
+      (apply #'concatenate
+             'list
+             completions-for-each-package-completion))))
+
+
+(defun ends-in-colon (package-prefix)
+  (check-type package-prefix string)
+  (char= #\: (elt package-prefix (- (length package-prefix) 1))))
+
+(defun strip-package-delimeter (package-prefix)
+  (check-type package-prefix string)
+  (assert (ends-in-colon package-prefix))
+  (flet ((maybe-strip (x)
+           (let ((len (length x)))
+             (if (char= #\: (elt x (- len 1)))
+                 (subseq x 0 (- len 1))
+                 x))))
+    (maybe-strip (maybe-strip package-prefix))))
 
 (defun package-completion-set (name package-name package internal-p matchp)
   (declare (ignore package internal-p))
-  (mapcar (completion-output-package-converter name)
-	  (and (not package-name)
-	       (find-matching-packages name matchp))))
+  (let ((packages (and (not package-name)
+                       (find-matching-packages name matchp))))
+    (values
+     (mapcar (completion-output-package-converter name) packages)
+     packages)))
 
 (defun find-matching-symbols (string package external test)
   "Return a list of symbols in PACKAGE matching STRING.
@@ -89,7 +170,7 @@ symbols are returned."
                       (symbol-external-p symbol package))
                   (funcall test string
                            (funcall converter (symbol-name symbol))))))
-      (do-symbols* (symbol package) 
+      (do-symbols* (symbol package)
         (when (symbol-matches-p symbol)
           (push symbol completions))))
     completions))
@@ -102,26 +183,44 @@ TEST is called with two strings."
     (flet ((symbol-matches-p (symbol)
              (funcall test string
                       (funcall converter (symbol-name symbol)))))
-      (dolist (symbol list) 
+      (dolist (symbol list)
         (when (symbol-matches-p symbol)
           (push symbol completions))))
     (remove-duplicates completions)))
 
 (defun find-matching-packages (name matcher)
-  "Return a list of package names matching NAME with MATCHER.
-MATCHER is a two-argument predicate."
+  "Return a list of packages matching NAME with MATCHER.
+MATCHER is a two-argument predicate.
+
+Each element of the returned list is a string of the form 'pkg-name:'
+where 'pkg-name' is a valid package name."
   (let ((converter (completion-output-package-converter name)))
     (remove-if-not (lambda (x)
                      (funcall matcher name (funcall converter x)))
                    (mapcar (lambda (pkgname)
                              (concatenate 'string pkgname ":"))
                            (loop for package in (list-all-packages)
-                                 nconcing (package-names package))))))
+                              nconcing (package-names package))))))
+
+(defun find-matching-package-objects (name matcher)
+  "Return a list of package objects matching NAME with MATCHER.
+MATCHER is a two-argument predicate.
+
+Each element of the returned list is a package object, rather than a suffixed
+packaged string as returned by FIND-MATCHING-PACKAGES."
+  (let* ((suffixed-package-names (find-matching-packages name matcher))
+         (package-names (mapcar
+                         (lambda (name)
+                           (assert (char= #\: (elt name (- (length name) 1))))
+                           (subseq name 0 (- (length name) 1)))
+                         suffixed-package-names)))
+    ;; TODO: Respect find-locally-nicknamed-package?
+    (mapcar 'guess-package package-names)))
 
 
 ;; PARSE-COMPLETION-ARGUMENTS return table:
-;; 
-;;  user behaviour |  NAME  | PACKAGE-NAME | PACKAGE 
+;;
+;;  user behaviour |  NAME  | PACKAGE-NAME | PACKAGE
 ;; ----------------+--------+--------------+-----------------------------------
 ;; asdf     [tab]  | "asdf" |     NIL      | #<PACKAGE "DEFAULT-PACKAGE-NAME">
 ;;                 |        |              |      or *BUFFER-PACKAGE*
@@ -129,7 +228,7 @@ MATCHER is a two-argument predicate."
 ;;                 |        |              |
 ;; asdf:foo [tab]  | "foo"  |    "asdf"    | #<PACKAGE "ASDF">
 ;;                 |        |              |
-;; as:fo    [tab]  |  "fo"  |     "as"     | NIL              
+;; as:fo    [tab]  |  "fo"  |     "as"     | NIL
 ;;                 |        |              |
 ;; :        [tab]  |   ""   |      ""      | #<PACKAGE "KEYWORD">
 ;;                 |        |              |
@@ -148,17 +247,17 @@ Return these values:
   (multiple-value-bind (name package-name internal-p)
       (tokenize-symbol string)
     (flet ((default-package ()
-	     (or (guess-package default-package-name) *buffer-package*)))
+             (or (guess-package default-package-name) *buffer-package*)))
       (let ((package (cond
-		       ((not package-name)
-			(default-package))
-		       ((equal package-name "")
-			(guess-package (symbol-name :keyword)))
-		       ((find-locally-nicknamed-package
-			 package-name (default-package)))
-		       (t
-			(guess-package package-name)))))
-	(values name package-name package internal-p)))))
+                       ((not package-name)
+                        (default-package))
+                       ((equal package-name "")
+                        (guess-package (symbol-name :keyword)))
+                       ((find-locally-nicknamed-package
+                         package-name (default-package)))
+                       (t
+                        (guess-package package-name)))))
+        (values name package-name package internal-p)))))
 
 (defun completion-output-case-converter (input &optional with-escaping-p)
   "Return a function to convert strings for the completion output.
@@ -233,19 +332,19 @@ a compound-prefix of `target'.
 
 DELIMITER may be a character, or a list of characters."
   (let ((delimiters (etypecase delimiter
-		      (character (list delimiter))
-		      (cons      (assert (every #'characterp delimiter))
-			         delimiter))))
+                      (character (list delimiter))
+                      (cons      (assert (every #'characterp delimiter))
+                                 delimiter))))
     (lambda (prefix target)
       (declare (type simple-string prefix target))
       (loop with tpos = 0
-	    for ch across prefix
-	    always (and (< tpos (length target))
-			(let ((delimiter (car (member ch delimiters :test test))))
-			  (if delimiter
-			      (setf tpos (position delimiter target :start tpos))
-			      (funcall test ch (aref target tpos)))))
-	    do (incf tpos)))))
+            for ch across prefix
+            always (and (< tpos (length target))
+                        (let ((delimiter (car (member ch delimiters :test test))))
+                          (if delimiter
+                              (setf tpos (position delimiter target :start tpos))
+                              (funcall test ch (aref target tpos)))))
+            do (incf tpos)))))
 
 
 ;;;;; Extending the input string by completion
