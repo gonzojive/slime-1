@@ -62,7 +62,7 @@ format. The cases are as follows:
                                        internal-p package-name)
                 (sort combined-set #'string<))))
       (when completion-set
-        (list completion-set (longest-compound-prefix completion-set))))))
+        (list completion-set (longest-compound-prefix2 completion-set))))))
 
 (defun default-compound-prefix-matcher (prefix-type)
   "Returns the compound prefix matcher for the given type of prefix.
@@ -358,9 +358,17 @@ DELIMITER may be a character, or a list of characters."
            ;; Note that we possibly collect the "" here as well, so that
            ;; UNTOKENIZE-COMPLETION will append a delimiter for us.
              collect (longest-common-prefix token-list)
-             and do (loop-finish)
+             and do (loop-finish) ; TODO: Why stop at first mismatch?
            else collect (first token-list))
      delimiter)))
+
+(defun longest-compound-prefix2 (completions &optional (delimiter #\-))
+  "Return the longest compound _prefix_ for all COMPLETIONS."
+  (flet ((tokenizer (string) (tokenize-completion string delimiter)))
+    (let* ((completions-tokenized (mapcar #'tokenizer completions))
+           (aligned-tokens (transpose-lists completions-tokenized))
+           (shared-prefixes (mapcar 'longest-common-prefix aligned-tokens)))
+      (untokenize-completion shared-prefixes delimiter))))
 
 (defun tokenize-completion (string delimiter)
   "Return all substrings of STRING delimited by DELIMITER."
