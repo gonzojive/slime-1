@@ -207,13 +207,27 @@ terminates a current completion."
              (when (member completed-prefix completion-set)
                (slime-minibuffer-respecting-message 
                 "Complete but not unique"))
-	     (when slime-c-p-c-unambiguous-prefix-p
-	       (let ((unambiguous-completion-length
-		      (cl-loop for c in completion-set
-			       minimizing (or (cl-mismatch completed-prefix c)
-                                              (length completed-prefix)))))
-		 (goto-char (+ beg unambiguous-completion-length))))
-             (slime-display-or-scroll-completions completion-set 
+             (when slime-c-p-c-unambiguous-prefix-p
+               ;; TODO: Unhandled case: "fo-b:sy^m"--^ is point--has completion list
+               ;; (("foo-bar:symbol" "foo-baz:symbol-x") "foo-")
+               ;; buffer should be replaced with "foo-b^:symbol"
+               (let* ((unambiguous-completion-length
+                       (cl-loop for c in completion-set
+                                minimizing (or (cl-mismatch completed-prefix c)
+                                               (length completed-prefix))))
+                      (buffer-sym-prefix-length
+                       (cl-mismatch completed-prefix prefix))
+                      (insertion-str (substring completed-prefix
+                                                buffer-sym-prefix-length)))
+                 ;(goto-char (+ beg buffer-sym-prefix-length))
+                 ;(insert-and-inherit insertion-str)
+                 ;(goto-char (+ beg (length completed-prefix)))
+
+                 ;(message ">> unambiguous length = %s, %s"
+                 ;         unambiguous-completion-length
+                 ;         buffer-sym-prefix-length)
+                 (goto-char (+ beg unambiguous-completion-length))))
+             (slime-display-or-scroll-completions completion-set
                                                   completed-prefix))))))
 
 (defun slime-complete-symbol*-fancy-bit ()
