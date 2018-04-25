@@ -138,10 +138,12 @@ The strings returned include the package prefix and symbol."
 
 
 (defun ends-in-colon (package-prefix)
+  "Returns T if the last element of the string PACKAGE-PREFIX is :"
   (check-type package-prefix string)
   (char= #\: (elt package-prefix (- (length package-prefix) 1))))
 
 (defun strip-package-delimeter (package-prefix)
+  "Given an input like \"PKG:\", returns \"PKG\"."
   (check-type package-prefix string)
   (assert (ends-in-colon package-prefix))
   (flet ((maybe-strip (x)
