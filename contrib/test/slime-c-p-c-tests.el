@@ -9,6 +9,8 @@
                       "cl:compiler-macro" "cl:compiler-macro-function")
                      "cl:compile"))
       ("cl:foobar" nil)
+      ("c:m-v-b" (("cl:multiple-value-bind")
+                  "cl:multiple-vaxlue-bind"))
       ("swank::compile-file" (("swank::compile-file"
                                "swank::compile-file-for-emacs"
                                "swank::compile-file-if-needed"
