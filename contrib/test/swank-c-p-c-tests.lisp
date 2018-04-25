@@ -35,4 +35,12 @@
      '("ab:x1-yy" "abc-efg:x2-yy"))
     "ab:x-yy")
 
+(is (swank::longest-compound-prefix2
+     '("ab::x1-yy" "abc-efg:x2-yy"))
+    "ab:x-yy")
+
+(is (swank::longest-compound-prefix2
+     '("foo-bar::a-b-c" "foo-bar:a-b-c"))
+    "foo-bar:a-b-c")
+
 (finalize)
