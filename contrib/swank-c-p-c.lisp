@@ -364,7 +364,51 @@ DELIMITER may be a character, or a list of characters."
            else collect (first token-list))
      delimiter)))
 
-(defun longest-compound-prefix2 (completions &optional (delimiter #\-))
+;(defclass completion ()
+;  ((package-part :type (or null string) :initarg :package-part :reader package-part)
+;   (package-delim :type (or null string) :initarg :package-part :reader package-part)
+
+
+(defun longest-compound-prefix2 (completions)
+  "Return the longest compound _prefix_ for all COMPLETIONS."
+  (flet ((package-tokenizer (string)
+           (let ((pos (position #\: string :from-end t)))
+             (if (not pos)
+                 (list string)
+                 (list (subseq string 0 pos)
+                       (subseq string (+ 1 pos))))))
+         (package-untokenizer (tokens) (untokenize-completion tokens #\:))
+         (symbol-tokenizer (string) (tokenize-completion string #\-))
+         (symbol-untokenizer (tokens) (untokenize-completion tokens #\-)))
+
+    ;; aligned-completion-parts turns
+    ;; '("cl:multiple-value-bind" "common-lisp:multiple-value-bind")))
+    ;; into
+    ;; (("cl" "common-lisp") ("multiple-value-bind" "multiple-value-bind"))
+    ;; longest-prefix-per-part turns the above into
+    ;; ("c" "multiple-value-bind")
+    (let* ((aligned-completion-parts (transpose-lists
+                                      (mapcar #'package-tokenizer completions)))
+           (longest-prefix-per-part (mapcar
+                                     (lambda (x)
+                                       (longest-compound-prefix-with-tokenizer
+                                        x
+                                        #'symbol-tokenizer #'symbol-untokenizer))
+                                     aligned-completion-parts)))
+      (package-untokenizer longest-prefix-per-part))))
+
+
+(defun longest-compound-prefix-with-tokenizer (completions tokenizer untokenizer)
+  "Return the longest compound _prefix_ for all COMPLETIONS.
+
+TOKENIZER is a function that splits a string into a list; UNTOKENIZER combines a
+list into a string."
+  (let* ((completions-tokenized (mapcar tokenizer completions))
+           (aligned-tokens (transpose-lists completions-tokenized))
+           (shared-prefixes (mapcar 'longest-common-prefix aligned-tokens)))
+    (funcall untokenizer shared-prefixes)))
+
+(defun longest-compound-prefix2-old (completions &optional (delimiter #\-))
   "Return the longest compound _prefix_ for all COMPLETIONS."
   (flet ((tokenizer (string) (tokenize-completion string delimiter)))
     (let* ((completions-tokenized (mapcar #'tokenizer completions))

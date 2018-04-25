@@ -17,13 +17,12 @@
                                "swank::compile-file-output"
                                "swank::compile-file-pathname")
                               "swank::compile-file"))
-      ("swa::compile-fil-fo-e" (("swank::compile-file-for-emacs"
-                                 "swank-macrostep::compile-file-for-emacs")
+      ("swa::compile-fil-fo-e" (("swank::compile-file-for-emacs")
                                 "swank::compile-file-for-emacs"))
       ("swa:compile-fil-fo-e" (("swank:compile-file-for-emacs")
                                "swank:compile-file-for-emacs"))
       ("cl:m-v-l" (("cl:multiple-value-list" "cl:multiple-values-limit") "cl:multiple-value-li"))
-      ("common-lisp" (("common-lisp-user:" "common-lisp:") "common-lisp")))
+      ("common-lisp" (("common-lisp-user:" "common-lisp:") "common-lisp:")))
   (let ((completions (slime-completions prefix)))
     (slime-test-expect "Completion set" expected-completions completions)))
 
