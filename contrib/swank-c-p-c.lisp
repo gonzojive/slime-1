@@ -406,14 +406,6 @@ list into a string."
            (shared-prefixes (mapcar 'longest-common-prefix aligned-tokens)))
     (funcall untokenizer shared-prefixes)))
 
-(defun longest-compound-prefix2-old (completions &optional (delimiter #\-))
-  "Return the longest compound _prefix_ for all COMPLETIONS."
-  (flet ((tokenizer (string) (tokenize-completion string delimiter)))
-    (let* ((completions-tokenized (mapcar #'tokenizer completions))
-           (aligned-tokens (transpose-lists completions-tokenized))
-           (shared-prefixes (mapcar 'longest-common-prefix aligned-tokens)))
-      (untokenize-completion shared-prefixes delimiter))))
-
 (defun tokenize-completion (string delimiter)
   "Return all substrings of STRING delimited by DELIMITER."
   (loop with end
