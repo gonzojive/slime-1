@@ -81,8 +81,6 @@ compound-prefix of `target', and otherwise NIL."
 
 (defun symbol-completion-set (name package-name package internal-p matchp)
   "Return the set of completion-candidates as strings."
-  (format t "(symbol-completion-set ~S ~S ~S ~S x)~%"
-          name package-name package internal-p)
   (when package
     (mapcar
      (completion-output-symbol-converter name)
