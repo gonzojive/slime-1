@@ -366,7 +366,6 @@ DELIMITER may be a character, or a list of characters."
 
 (defun longest-compound-prefix2 (completions &optional (delimiter #\-))
   "Return the longest compound _prefix_ for all COMPLETIONS."
-  (declare (optimize (debug 3)))
   (flet ((tokenizer (string) (tokenize-completion string delimiter)))
     (let* ((completions-tokenized (mapcar #'tokenizer completions))
            (aligned-tokens (transpose-lists completions-tokenized))
