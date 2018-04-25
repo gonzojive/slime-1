@@ -9,8 +9,8 @@
                       "cl:compiler-macro" "cl:compiler-macro-function")
                      "cl:compile"))
       ("cl:foobar" nil)
-      ("c:m-v-b" (("cl:multiple-value-bind")
-                  "cl:multiple-vaxlue-bind"))
+      ("c:m-v-b" (("cl:multiple-value-bind" "common-lisp:multiple-value-bind")
+                  "c:multiple-value-bind"))
       ("swank::compile-file" (("swank::compile-file"
                                "swank::compile-file-for-emacs"
                                "swank::compile-file-if-needed"
@@ -22,7 +22,7 @@
                                 "swank"))
       ("swa:compile-fil-fo-e" (("swank:compile-file-for-emacs")
                                "swank:compile-file-for-emacs"))
-      ("cl:m-v-l" (("cl:multiple-value-list" "cl:multiple-values-limit") "cl:multiple-value"))
+      ("cl:m-v-l" (("cl:multiple-value-list" "cl:multiple-values-limit") "cl:multiple-value-li"))
       ("common-lisp" (("common-lisp-user:" "common-lisp:") "common-lisp")))
   (let ((completions (slime-completions prefix)))
     (slime-test-expect "Completion set" expected-completions completions)))

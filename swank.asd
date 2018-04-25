@@ -35,3 +35,21 @@
 (asdf:defsystem :swank
   :default-component-class swank-loader-file
   :components ((:file "swank-loader")))
+
+;;;; TODO: define the test system.
+
+(asdf:defsystem #:swank/test
+  :description "Swank tests."
+  :defsystem-depends-on (:prove-asdf)
+  :serial t
+  :version "0.0.1"
+  :components ((:module
+                "contrib"
+                :components
+                ((:module
+                  "tests"
+                  :components ((:test-file "swank-c-p-c-tests"))))))
+  :depends-on (#:swank #:prove)
+  :perform (asdf:test-op
+            :after (op c)
+            (funcall (intern #.(string :run) :prove) c)))
