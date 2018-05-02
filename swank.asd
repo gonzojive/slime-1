@@ -35,3 +35,31 @@
 (asdf:defsystem :swank
   :default-component-class swank-loader-file
   :components ((:file "swank-loader")))
+
+(asdf:defsystem #:swank/test2
+  :description "Swank tests in Common Lisp."
+  :defsystem-depends-on (:prove-asdf)
+  :components ((:module
+                "contrib"
+                :components
+                ((:module
+                  "test"
+                  :components ((:test-file "swank-c-p-c-tests"))))))
+  :depends-on (#:swank #:prove)
+  :perform (asdf:test-op
+            :after (op c)
+            (funcall (intern #.(string :run) :prove) c)))
+
+(asdf:defsystem #:swank/test
+  :description "Swank tests in Common Lisp."
+  :defsystem-depends-on (:prove-asdf)
+  :components ((:module
+                "contrib"
+                :components
+                ((:module
+                  "test"
+                  :components ((:file "swank-c-p-c-tests-fiveam"))))))
+  :depends-on (#:swank #:fiveam)
+  :perform (asdf:test-op
+            :after (op c)
+            (funcall (intern #.(string :run) :prove) c)))

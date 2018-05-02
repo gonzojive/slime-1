@@ -5,18 +5,24 @@
     (prefix expected-completions)
     "Find the completions of a symbol-name prefix."
     '(("cl:compile" (("cl:compile" "cl:compile-file" "cl:compile-file-pathname"
-                      "cl:compiled-function" "cl:compiled-function-p" 
+                      "cl:compiled-function" "cl:compiled-function-p"
                       "cl:compiler-macro" "cl:compiler-macro-function")
                      "cl:compile"))
       ("cl:foobar" nil)
-      ("swank::compile-file" (("swank::compile-file" 
+      ("c:m-v-b" (("cl:multiple-value-bind" "common-lisp:multiple-value-bind")
+                  "c:multiple-value-bind"))
+      ("swank::compile-file" (("swank::compile-file"
                                "swank::compile-file-for-emacs"
                                "swank::compile-file-if-needed"
                                "swank::compile-file-output"
                                "swank::compile-file-pathname")
                               "swank::compile-file"))
-      ("cl:m-v-l" (("cl:multiple-value-list" "cl:multiple-values-limit") "cl:multiple-value"))
-      ("common-lisp" (("common-lisp-user:" "common-lisp:") "common-lisp")))
+      ("swa::compile-fil-fo-e" (("swank::compile-file-for-emacs")
+                                "swank::compile-file-for-emacs"))
+      ("swa:compile-fil-fo-e" (("swank:compile-file-for-emacs")
+                               "swank:compile-file-for-emacs"))
+      ("cl:m-v-l" (("cl:multiple-value-list" "cl:multiple-values-limit") "cl:multiple-value-li"))
+      ("common-lisp" (("common-lisp-user:" "common-lisp:") "common-lisp:")))
   (let ((completions (slime-completions prefix)))
     (slime-test-expect "Completion set" expected-completions completions)))
 

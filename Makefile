@@ -47,6 +47,9 @@ compile: $(ELCFILES)
 #
 SELECTOR=t
 
+check-cl:
+	$(LISP) --noinform --load "run-tests.lisp" --then-quit
+
 check: compile
 	$(EMACS) -Q --batch $(LOAD_PATH)				\
 		--eval "(require 'slime-tests)"				\
