@@ -29,37 +29,28 @@
 ;;;; after loading run init
 
 (defmethod asdf:perform ((o asdf:load-op) (f swank-loader-file))
-  (load (asdf::component-pathname f))
+  (load (asdf:component-pathname f))
   (funcall (read-from-string "swank-loader::init") :reload t))
 
 (asdf:defsystem :swank
   :default-component-class swank-loader-file
   :components ((:file "swank-loader")))
 
-(asdf:defsystem #:swank/test2
-  :description "Swank tests in Common Lisp."
-  :defsystem-depends-on (:prove-asdf)
-  :components ((:module
-                "contrib"
-                :components
-                ((:module
-                  "test"
-                  :components ((:test-file "swank-c-p-c-tests"))))))
-  :depends-on (#:swank #:prove)
-  :perform (asdf:test-op
-            :after (op c)
-            (funcall (intern #.(string :run) :prove) c)))
-
 (asdf:defsystem #:swank/test
   :description "Swank tests in Common Lisp."
-  :defsystem-depends-on (:prove-asdf)
   :components ((:module
                 "contrib"
                 :components
                 ((:module
                   "test"
-                  :components ((:file "swank-c-p-c-tests-fiveam"))))))
-  :depends-on (#:swank #:fiveam)
+                  :components ((:file "swank-c-p-c-tests-fiveam")))))
+               (:file "all-suites" :depends-on ("contrib")))
+  :depends-on (#:swank #:fiveam #:uiop)
+  :perform (asdf:prepare-op
+            (op c)
+            (funcall (read-from-string "swank-loader::init") :load-contribs t)
+            (call-next-method))
   :perform (asdf:test-op
-            :after (op c)
-            (funcall (intern #.(string :run) :prove) c)))
+            (op c)
+            (funcall (read-from-string "swank-test:run-tests"))
+            (call-next-method)))
