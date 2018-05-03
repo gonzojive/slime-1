@@ -1,6 +1,7 @@
 (in-package :cl-user)
 
 (defpackage #:swank-c-p-c-test-fiveam
+  (:documentation "Tests for swank-c-p-c.lisp.")
   (:use :cl)
   (:export #:suite)
   (:import-from :it.bese.fiveam
@@ -65,8 +66,11 @@ MAKE-PACKAGE-ARGS are passed to MAKE-PACKAGE to construct the package."
          '(("hello-world" "hello-world-x") "hello-world")
          (swank:completions "h-world" "abc-123")))))
 
-;;;; Test swank::longest-compound-prefix, even though it is internal.  Many of
-;;;; the current behaviors seem less than useful.
+;;;; Test swank::longest-compound-prefix, even though it is internal.
+;;;
+;;; TODO: Many of the current behaviors seem... less than ideal.
+;;; ("ab-efg:x1-yy" "abc-efg:x2-yy") should probably result in a prefix
+;;; of "ab-efg:x-yy."
 
 (test longest-compound-prefix-1
   (is (equalp (swank::longest-compound-prefix '("x1" "x2"))

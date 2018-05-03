@@ -1,8 +1,10 @@
-;;;; This file is meant to be loaded from the command line:
-;;;;    sbcl --noinform --load "run-tests.lisp" --then-quit
-;;;;
-;;;; To load the tests interactively, try
-;;;;     (asdf:operate 'asdf:test-op :swank/test)
+;;;; Script to run Common Lisp tests for Swank.
+;;;
+;;; This file is meant to be loaded from the command line:
+;;;    sbcl --noinform --load "run-tests.lisp" --then-quit
+;;;
+;;; To load the tests interactively, try
+;;;     (asdf:operate 'asdf:test-op :swank/test)
 
 (cl:defpackage #:swank-run-tests
   (:use :cl))
