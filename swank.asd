@@ -43,8 +43,8 @@
                 :components
                 ((:module
                   "test"
-                  :components ((:file "swank-c-p-c-tests-fiveam")))))
-               (:file "all-suites" :depends-on ("contrib")))
+                  :components ((:file "swank-c-p-c-tests")))))
+               (:file "swank-tests" :depends-on ("contrib")))
   :depends-on (#:swank #:fiveam #:uiop)
   :perform (asdf:prepare-op
             (op c)
